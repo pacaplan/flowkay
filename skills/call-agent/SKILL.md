@@ -44,7 +44,9 @@ collection path.
 
 To abort an in-flight child without ending the parent step, invoke `cancel_agent_call`
 with the active `call_id`. Do not rely on canceling a `call_agent` or `get_agent_call`
-MCP request to stop the child.
+MCP request to stop the child. `cancel_agent_call` can return while status is still
+`accepted` or `running`; keep polling `get_agent_call` until the call is terminal.
+Do not treat the cancel result as a freed slot or start another child until then.
 
 A later skill invocation may start another serial call only when the enclosing workflow
 permits it and no child is in flight.
