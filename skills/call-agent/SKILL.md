@@ -4,9 +4,9 @@ description: Safely invokes one Runner-owned child agent with a complete standal
 
 # Call Agent
 
-Use the Runner-owned `call_agent` tool to start one bounded child invocation, then poll
-`get_agent_call` until the call is terminal. Preserve the caller's task, permission
-boundary, output contract, and call budget.
+Use the Runner-owned `call_agent` tool to run one bounded child invocation, and poll
+`get_agent_call` when the start does not already return the child's result. Preserve the
+caller's task, permission boundary, output contract, and call budget.
 
 ## Invoke
 
@@ -33,13 +33,16 @@ budget. Do not silently retry a failed call.
 
 ## Collect the result
 
-`call_agent` returns a `call_id` and a non-terminal status (`accepted` or `running`)
-without waiting for the child. That start result is not the child's final response.
+`call_agent` waits for the child and usually returns its terminal result. Wait for it,
+however long it takes; a child can legitimately run for many minutes.
 
-Poll `get_agent_call` with that `call_id` until status is terminal. Do not report child
-findings, claim the work completed, or start another child while status is `accepted` or
-`running`. If `get_agent_call` is missing after a start that returned a `call_id`, report
-that missing capability as a blocker; do not wait on `call_agent` or substitute another
+On a host that cannot hold a request open that long, `call_agent` instead returns a
+`call_id` with a non-terminal status (`accepted` or `running`), which is not the child's
+final response. It is also what a host timeout error means: the child is still running.
+In either case, poll `get_agent_call` with that `call_id` until status is terminal. Do not
+report child findings, claim the work completed, or start another child while status is
+`accepted` or `running`. If `get_agent_call` is missing after a start that returned a
+`call_id`, report that missing capability as a blocker; do not substitute another
 collection path.
 
 To abort an in-flight child without ending the parent step, invoke `cancel_agent_call`
